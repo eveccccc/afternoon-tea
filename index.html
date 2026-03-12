@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Afternoon Tea Reserve - 訂下午茶系統</title>
+    <meta name="description" content="專業的辦公室下午茶訂購系統，輕鬆管理店家、下單及查看歷史紀錄。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="app">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo">
+                <span class="logo-icon">🍵</span>
+                <span class="logo-text">TeaTime</span>
+            </div>
+            <nav>
+                <button id="nav-dashboard" class="nav-item active" onclick="app.switchTab('dashboard')">
+                    <span class="icon">📊</span> 總覽
+                </button>
+                <button id="nav-vendors" class="nav-item" onclick="app.switchTab('vendors')">
+                    <span class="icon">🏪</span> 店家管理
+                </button>
+                <button id="nav-order" class="nav-item" onclick="app.switchTab('order')">
+                    <span class="icon">🛒</span> 立即訂購
+                </button>
+                <button id="nav-history" class="nav-item" onclick="app.switchTab('history')">
+                    <span class="icon">📜</span> 歷史訂單
+                </button>
+            </nav>
+            <div class="sidebar-footer">
+                <p>© 2026 Afternoon Tea Ops</p>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="content">
+            <header class="top-bar">
+                <h1 id="page-title">總覽 Dashboard</h1>
+                <div class="user-profile">
+                    <span id="current-user">嗨 伊芙</span>
+                    <div class="avatar">👤</div>
+                </div>
+            </header>
+
+            <section id="tab-dashboard" class="tab-content active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>今日訂單狀態</h3>
+                        <p id="today-order-status">無進行中的訂單</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>累計訂購次數</h3>
+                        <p id="total-orders" style="font-size: 1.5rem; font-weight: bold; color: var(--accent-yellow);">
+                            0 次</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>最常點的店家</h3>
+                        <p id="top-vendor">尚未有資料</p>
+                    </div>
+                </div>
+
+                <div class="stats-grid" style="margin-top: 1.5rem; grid-template-columns: 1fr;">
+                    <div class="stat-card"
+                        style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(59, 130, 246, 0.1)); border: 1px dashed var(--accent-blue);">
+                        <h3>🌐 如何讓全公司都看到這個網站？</h3>
+                        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6;">
+                            目前資料儲存在您的瀏覽器中 (Local Storage)。若要大家共享，建議：<br>
+                            1. 將此資料夾上傳至 <strong>GitHub</strong> 並開啟 <strong>GitHub Pages</strong>。<br>
+                            2. 若需多人同步寫入資料，建議串接 <strong>Firebase</strong> 或 <strong>Supabase</strong> 雲端資料庫。<br>
+                            <span style="color: var(--accent-blue);">需進一步協助佈署，請隨時詢問我！</span>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="recent-section">
+                    <h2>近期單筆明細</h2>
+                    <div id="recent-orders-list" class="list-container">
+                        <p class="empty-state">目前還沒有單筆紀錄</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-vendors" class="tab-content">
+                <div class="section-actions">
+                    <button class="btn btn-primary" onclick="app.showAddVendorModal()">+ 新增店家</button>
+                </div>
+                <div id="vendors-list" class="vendors-grid">
+                    <!-- Vendors will be rendered here -->
+                </div>
+            </section>
+
+            <section id="tab-order" class="tab-content">
+                <div class="order-workflow">
+                    <!-- 啟動與管理訂購活動 -->
+                    <div class="recent-section" style="margin-top: 0;">
+                        <h2 style="display: flex; align-items: center; gap: 10px;">
+                            🚀 啟動新訂購活動
+                            <span id="session-feedback"
+                                style="font-size: 0.8rem; font-weight: normal; color: var(--accent-blue); opacity: 0; transition: opacity 0.3s;">已成功啟動！</span>
+                        </h2>
+                        <div class="list-container" style="margin-bottom: 2rem;">
+                            <div class="grid-2" style="align-items: end;">
+                                <div class="form-group">
+                                    <label>訂購日期/名稱 (例如: 3/12 下午茶)</label>
+                                    <input type="text" id="session-date" placeholder="請輸入日期或名稱">
+                                </div>
+                                <button id="btn-create-session" class="btn btn-success" onclick="app.createSession()"
+                                    style="margin-bottom: 1.25rem; height: 45px;">
+                                    啟動訂購活動
+                                </button>
+                            </div>
+                            <div class="form-group">
+                                <label>選擇開放店家 (可複選)</label>
+                                <div id="session-vendor-checks" class="checkbox-group"
+                                    style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));">
+                                    <!-- 店家複選清單 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="active-sessions-management">
+                        <h2>⚙️ 開放中的活動管理</h2>
+                        <div id="active-sessions-list" class="vendors-grid" style="grid-template-columns: 1fr;">
+                            <!-- 動態顯示進行中的 Session 及其編輯/刪除按鈕 -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-history" class="tab-content">
+                <h2>所有歷史訂單</h2>
+                <div id="full-history-list" class="history-table-container">
+                    <!-- History table -->
+                </div>
+            </section>
+        </main>
+
+        <!-- Modals -->
+        <div id="modal-container" class="modal-overlay">
+            <div id="vendor-modal" class="modal">
+                <h2 id="modal-title">新增店家</h2>
+                <form id="vendor-form">
+                    <!-- 第一區段：店家基本資訊與訂購規則 -->
+                    <div class="form-section-title">基本資訊與訂購規則</div>
+                    <div class="form-group">
+                        <label>店家名稱</label>
+                        <input type="text" id="v-name" required placeholder="例如：迷客夏">
+                    </div>
+                    <div class="form-group grid-2">
+                        <div>
+                            <label>分類</label>
+                            <input type="text" id="v-category" placeholder="手搖、炸雞、甜點">
+                        </div>
+                        <div>
+                            <label>提前告知時間</label>
+                            <input type="text" id="v-notice" placeholder="例如：前2天">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>訂購方式 (可複選)</label>
+                        <div class="checkbox-group" id="order-method-checks">
+                            <label><input type="checkbox" value="電話"> 電話</label>
+                            <label><input type="checkbox" value="官方LINE"> LINE</label>
+                            <label><input type="checkbox" value="IG預定"> IG</label>
+                            <label><input type="checkbox" value="你訂"> 你訂</label>
+                            <label><input type="checkbox" value="現場購買"> 現場</label>
+                            <label><input type="checkbox" value="外送平台"> 外送平台</label>
+                        </div>
+                        <input type="text" id="v-method-custom" placeholder="其他方式 (如有多個請用逗號隔開)"
+                            style="margin-top: 5px; font-size: 0.8rem; padding: 0.4rem;">
+                    </div>
+                    <div class="form-group">
+                        <label>備註事項</label>
+                        <textarea id="v-notes" rows="2" placeholder="例如：滿1500外送、無收據..."></textarea>
+                    </div>
+
+                    <!-- 第二區段：聯絡資訊 -->
+                    <div class="form-section-title">聯絡資訊</div>
+                    <div class="form-group grid-2">
+                        <div>
+                            <label>聯絡電話</label>
+                            <input type="text" id="v-phone" placeholder="02-12345678">
+                        </div>
+                        <div>
+                            <label>地址</label>
+                            <input type="text" id="v-address" placeholder="店家完整地址">
+                        </div>
+                    </div>
+
+                    <!-- 第三區段：菜單 -->
+                    <div class="form-section-title">菜單內容</div>
+                    <div class="form-group">
+                        <label>菜單 (每行一項：品名, 價格規格)</label>
+                        <textarea id="v-menu" rows="6" placeholder="珍珠鮮奶, 65
+手工餅乾, 18/個
+雞蛋糕, 35/2個"></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn" onclick="app.hideModal()">取消</button>
+                        <button type="submit" class="btn btn-primary">儲存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

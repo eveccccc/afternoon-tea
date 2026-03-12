@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>下午茶訂購員 - Member Portal</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        /* 前台專屬調整 */
+        .content {
+            padding: 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .vendor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .member-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 2rem 0;
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--glass-border);
+        }
+
+        .member-header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .member-header p {
+            color: var(--text-secondary);
+        }
+
+        .order-inputs {
+            margin-top: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            flex-direction: column;
+        }
+
+        .order-inputs input {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--primary-color);
+            padding: 0.8rem;
+            border-radius: var(--radius-md);
+            color: white;
+            width: 100%;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .back-button {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+        }
+    </style>
+</head>
+
+<body style="display: block;"> <!-- 前台不使用 Sidebar 佈局 -->
+    <div class="content">
+        <div class="member-header">
+            <span class="logo-icon">🧋</span>
+            <h1>下午茶訂購員</h1>
+            <p>辛苦了！選個喜歡的飲料或點心犒賞自己吧</p>
+        </div>
+
+        <!-- 步驟 1: 選擇今日開放店家 -->
+        <div id="step-select-vendor" class="workflow-step active">
+            <div id="active-vendor-container">
+                <div class="section-header">
+                    <h2>📢 今日開放訂購店家</h2>
+                </div>
+                <div id="vendor-list" class="vendor-grid">
+                    <!-- 只有管理員開放的店家會在此顯示 -->
+                </div>
+            </div>
+
+            <!-- 我的訂購紀錄 -->
+            <div id="my-orders-section" style="margin-top: 3rem;">
+                <div class="section-header">
+                    <h2>🔍 我的訂購紀錄 (最近)</h2>
+                </div>
+                <div id="my-orders-list" class="list-container">
+                    <p class="empty-state">尚未有訂購紀錄</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 步驟 2: 點餐菜單 -->
+        <div id="step-select-menu" class="workflow-step">
+            <button class="btn btn-back" onclick="memberApp.prevStep()">← 返回</button>
+            <div class="section-header">
+                <h2 id="current-vendor-name">載入中...</h2>
+                <p>請點擊品項加入購物車</p>
+            </div>
+
+            <div id="menu-items-list" class="menu-grid">
+                <!-- 菜單會在此顯示 -->
+            </div>
+
+            <!-- 購物車 (隱藏價格) -->
+            <div class="cart-summary" style="border-top: 2px solid var(--primary-color);">
+                <div class="cart-items" id="cart-items">
+                    <!-- 已點品項 -->
+                </div>
+                <div class="cart-total" style="flex-direction: column; align-items: stretch; gap: 1rem;">
+                    <input type="text" id="member-name" placeholder="請輸入你的名字 (必填)"
+                        style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); padding: 0.8rem; border-radius: var(--radius-md); color: white;">
+                    <button class="btn btn-success" style="width: 100%; padding: 1rem;"
+                        onclick="memberApp.placeOrder()">確認下單 送出</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 成功通知 -->
+    <div id="modal-container" class="modal-overlay">
+        <div class="modal" style="text-align: center;">
+            <div style="font-size: 4rem; margin-bottom: 1rem;">✅</div>
+            <h2>下單成功！</h2>
+            <p style="margin-bottom: 2rem; color: var(--text-secondary);">你的訂單已經送達主揪手中囉。</p>
+            <button class="btn btn-primary" onclick="location.reload()">好的</button>
+        </div>
+    </div>
+
+    <script src="order.js"></script>
+</body>
+
+</html>
