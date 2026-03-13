@@ -13,12 +13,47 @@ const app = {
 
   // Initialization
   init() {
+    this.updateCloudStatus();
     this.listenData();
     this.setupEventListeners();
     console.log("Afternoon Tea Cloud System Initialized");
   },
 
+  copyPortalLink() {
+    const url = window.location.href.replace('index.html', 'order.html');
+    navigator.clipboard.writeText(url);
+
+    let msg = '🔗 前台連結已複製！';
+    if (url.startsWith('file:///')) {
+      msg += '\n\n⚠️ 注意：您目前是在電腦上開啟檔案。\n請先上傳到 GitHub 後再將連結傳給同事，他們才能看到正確網址喔！';
+    }
+    alert(msg);
+  },
+
+  updateCloudStatus() {
+    const badge = document.getElementById('cloud-status-badge');
+    const isConfigured = typeof firebaseConfig !== 'undefined' && firebaseConfig.apiKey && !firebaseConfig.apiKey.includes('在此貼上');
+    this.isCloudActive = isConfigured;
+
+    if (!badge) return;
+
+    if (isConfigured) {
+      badge.innerHTML = '🟢 已連線雲端';
+      badge.style.color = '#10b981';
+    } else {
+      badge.innerHTML = '⚠️ 區域模式 (未連網)';
+      badge.style.color = '#f59e0b';
+      badge.title = '請至 firebase-config.js 填寫金鑰以開啟全公司同步。';
+    }
+  },
+
   listenData() {
+    if (!this.isCloudActive) {
+      console.log("使用 LocalStorage 模式");
+      this.loadLocalData();
+      return;
+    }
+    // ...雲端監聽保持不變
     // 監聽 店家 資料
     db.ref('vendors').on('value', (snapshot) => {
       const data = snapshot.val();
@@ -45,16 +80,38 @@ const app = {
     });
   },
 
+  loadLocalData() {
+    this.vendors = JSON.parse(localStorage.getItem('teatime_vendors') || '[]');
+    if (this.vendors.length === 0) this.vendors = this.getInitialVendors();
+    this.orders = JSON.parse(localStorage.getItem('teatime_orders') || '[]');
+    this.sessions = JSON.parse(localStorage.getItem('teatime_sessions') || '[]');
+
+    this.renderVendors();
+    this.updateDashboard();
+    if (document.getElementById('active-sessions-list')) this.renderActiveSessions();
+    if (document.getElementById('full-history-list')) this.renderHistory();
+  },
+
   loadData() {
-    // 雲端版改用 listenData，此函數保留結構但不再由 init 調用
+    // 雲端版由 listenData 或 loadLocalData 處理
   },
 
   saveData() {
-    // 雲端版直接更換整個資料路徑內容 (Realtime Database 下)
-    // 注意：這裡使用 set 是覆寫模式，適合小型專案同步
-    db.ref('vendors').set(this.vendors);
-    db.ref('orders').set(this.orders);
-    db.ref('sessions').set(this.sessions);
+    if (this.isCloudActive) {
+      db.ref('vendors').set(this.vendors);
+      db.ref('orders').set(this.orders);
+      db.ref('sessions').set(this.sessions);
+      this.updateDashboard(); // 雲端版通常透過監聽觸發，但點擊者需要即時反饋
+    } else {
+      localStorage.setItem('teatime_vendors', JSON.stringify(this.vendors));
+      localStorage.setItem('teatime_orders', JSON.stringify(this.orders));
+      localStorage.setItem('teatime_sessions', JSON.stringify(this.sessions));
+
+      this.renderVendors();
+      this.updateDashboard();
+      if (document.getElementById('active-sessions-list')) this.renderActiveSessions();
+      if (document.getElementById('full-history-list')) this.renderHistory();
+    }
   },
 
   getInitialVendors() {

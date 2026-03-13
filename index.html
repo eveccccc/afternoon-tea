@@ -42,7 +42,7 @@
             </nav>
             <div class="sidebar-footer">
                 <button class="btn btn-primary" style="width: 100%; margin-bottom: 1rem; font-size: 0.8rem;"
-                    onclick="const url = window.location.href.replace('index.html', 'order.html'); navigator.clipboard.writeText(url); alert('前台網址已複製！快發給同事吧：' + url)">
+                    onclick="app.copyPortalLink()">
                     🔗 複製前台連結
                 </button>
                 <p>© 2026 Afternoon Tea Ops</p>
@@ -52,8 +52,19 @@
         <!-- Main Content Area -->
         <main class="content">
             <header class="top-bar">
-                <h1 id="page-title">總覽 Dashboard</h1>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <h1 id="page-title">總覽 Dashboard</h1>
+                    <button class="btn btn-primary"
+                        style="padding: 0.4rem 0.8rem; font-size: 0.8rem; background: var(--accent-blue);"
+                        onclick="app.copyPortalLink()">
+                        🔗 複製前台連結
+                    </button>
+                </div>
                 <div class="user-profile">
+                    <div id="cloud-status-badge"
+                        style="font-size: 0.75rem; padding: 4px 8px; border-radius: 20px; background: rgba(255,255,255,0.1); margin-right: 10px;">
+                        正在讀取雲端狀態...
+                    </div>
                     <span id="current-user">嗨 伊芙</span>
                     <div class="avatar">👤</div>
                 </div>

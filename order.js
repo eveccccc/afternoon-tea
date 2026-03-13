@@ -11,12 +11,20 @@ const memberApp = {
     cart: [],
     selectedSession: null,
     selectedVendor: null,
+    isCloudActive: false,
 
     init() {
+        const isConfigured = typeof firebaseConfig !== 'undefined' && firebaseConfig.apiKey && !firebaseConfig.apiKey.includes('在此貼上');
+        this.isCloudActive = isConfigured;
         this.listenData();
     },
 
     listenData() {
+        if (!this.isCloudActive) {
+            console.log("Member Portal: Local Mode");
+            this.loadLocalData();
+            return;
+        }
         // 監聽 店家 資料
         db.ref('vendors').on('value', (snapshot) => {
             const data = snapshot.val();
@@ -34,14 +42,18 @@ const memberApp = {
         // 監聽 訂單 資料
         db.ref('orders').on('value', (snapshot) => {
             const data = snapshot.val();
-            // 注意：這裡我們需要維持訂單陣列，以便 placeOrder 提交
             this.orders = data ? Object.values(data) : [];
             this.renderMyOrders();
         });
     },
 
-    loadData() {
-        // 雲端版改用 listenData
+    loadLocalData() {
+        this.vendors = JSON.parse(localStorage.getItem('teatime_vendors') || '[]');
+        this.orders = JSON.parse(localStorage.getItem('teatime_orders') || '[]');
+        this.sessions = JSON.parse(localStorage.getItem('teatime_sessions') || '[]');
+
+        this.renderSessions();
+        this.renderMyOrders();
     },
 
     renderSessions() {
@@ -58,26 +70,29 @@ const memberApp = {
             return;
         }
 
-        container.innerHTML = openSessions.map(s => `
-            <div class="vendor-card" style="border: 2px solid var(--accent-blue); padding: 1.5rem;">
-                <div style="margin-bottom: 1rem;">
-                    <h3 style="color: white; font-size: 1.3rem;">📅 ${s.date}</h3>
-                    <p style="font-size: 0.8rem; color: var(--text-secondary);">包含 ${s.vendorIds.length} 個店家</p>
-                </div>
-                <div style="display: grid; gap: 0.5rem;">
-                    ${s.vendorIds.map(vId => {
-            const v = this.vendors.find(v => v.id === vId);
-            if (!v) return '';
+        container.innerHTML = openSessions.map(s => {
+            const sessionVendors = s.vendorIds.map(vId => {
+                const v = this.vendors.find(vend => vend.id === vId);
+                return v ? v : null;
+            }).filter(v => v !== null);
+
             return `
+                <div class="vendor-card" style="border: 2px solid var(--accent-blue); padding: 1.5rem;">
+                    <div style="margin-bottom: 1rem;">
+                        <h3 style="color: white; font-size: 1.3rem;">📅 ${s.date}</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary);">包含 ${sessionVendors.length} 個店家</p>
+                    </div>
+                    <div style="display: grid; gap: 0.5rem;">
+                        ${sessionVendors.map(v => `
                             <button class="btn btn-primary" style="justify-content: space-between; width: 100%;" onclick="memberApp.startOrder(${s.id}, ${v.id})">
                                 <span>${v.name} (${v.category})</span>
                                 <span>→</span>
                             </button>
-                        `;
-        }).join('')}
+                        `).join('')}
+                    </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     },
 
     renderMyOrders() {
@@ -146,6 +161,11 @@ const memberApp = {
         `).join('');
     },
 
+    removeFromCart(idx) {
+        this.cart.splice(idx, 1);
+        this.updateCartUI();
+    },
+
     placeOrder() {
         const name = document.getElementById('member-name').value.trim();
         if (!name) { alert('請輸入姓名'); return; }
@@ -163,9 +183,14 @@ const memberApp = {
             total: this.cart.reduce((sum, item) => sum + (parseFloat(item.basePrice) || 0), 0)
         };
 
-        // 提交到 Firebase (改用 push 增加在最後面，保持自然順序)
         const newOrders = [...this.orders, order];
-        db.ref('orders').set(newOrders);
+        if (this.isCloudActive) {
+            db.ref('orders').set(newOrders);
+        } else {
+            localStorage.setItem('teatime_orders', JSON.stringify(newOrders));
+            this.orders = newOrders;
+            this.renderMyOrders();
+        }
 
         document.getElementById('modal-container').style.display = 'flex';
     }
