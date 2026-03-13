@@ -5,25 +5,27 @@
 // 4. 在「SDK 設定和配置」選擇「配置 (Config)」，複製內容貼到下方
 
 const firebaseConfig = {
-    apiKey: "在此貼上 AIzaSy 開頭的字串",
-    authDomain: "在此貼上 your-project.firebaseapp.com",
-    databaseURL: "在此貼上 https://your-project-default-rtdb.firebaseio.com",
-    projectId: "在此貼上 your-project-id",
-    storageBucket: "在此貼上 your-project.appspot.com",
-    messagingSenderId: "在此貼上 數字 ID",
-    appId: "在此貼上 1:數字:web:字串"
+    apiKey: "AIzaSyB0Kz9HupK0hUppXyi0q0jxbwuxUpUuzfc",
+    authDomain: "teatime-a0138.firebaseapp.com",
+    databaseURL: "https://teatime-a0138-default-rtdb.firebaseio.com",
+    projectId: "teatime-a0138",
+    storageBucket: "teatime-a0138.firebasestorage.app",
+    messagingSenderId: "560683203956",
+    appId: "1:560683203956:web:3782e8dfbb503099a40021",
+    measurementId: "G-PBP8BE275S"
 };
 
 // 初始化 Firebase
-if (firebaseConfig.apiKey && !firebaseConfig.apiKey.includes('在此貼上')) {
+if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "") {
     firebase.initializeApp(firebaseConfig);
     window.db = firebase.database();
+    console.log("Firebase 雲端連線成功！");
 } else {
-    console.warn("Firebase 未設定，切換為本地模擬模式。");
+    console.warn("Firebase apiKey 尚未正確設定，切換為本地模式。");
     window.db = {
         ref: () => ({
             on: (type, callback) => callback({ val: () => null }),
-            set: () => console.log("離線狀態：無法存檔")
+            set: () => console.log("離線狀態：暫不存檔")
         })
     };
 }
