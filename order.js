@@ -13,20 +13,41 @@ const memberApp = {
     selectedVendor: null,
 
     init() {
-        this.loadData();
-        this.renderSessions();
-        this.renderMyOrders();
+        this.listenData();
+    },
+
+    listenData() {
+        // 監聽 店家 資料
+        db.ref('vendors').on('value', (snapshot) => {
+            const data = snapshot.val();
+            this.vendors = data ? Object.values(data) : [];
+            this.renderSessions();
+        });
+
+        // 監聽 訂購活動 資料
+        db.ref('sessions').on('value', (snapshot) => {
+            const data = snapshot.val();
+            this.sessions = data ? Object.values(data) : [];
+            this.renderSessions();
+        });
+
+        // 監聽 訂單 資料
+        db.ref('orders').on('value', (snapshot) => {
+            const data = snapshot.val();
+            // 注意：這裡我們需要維持訂單陣列，以便 placeOrder 提交
+            this.orders = data ? Object.values(data) : [];
+            this.renderMyOrders();
+        });
     },
 
     loadData() {
-        this.vendors = JSON.parse(localStorage.getItem('teatime_vendors') || '[]');
-        this.orders = JSON.parse(localStorage.getItem('teatime_orders') || '[]');
-        this.sessions = JSON.parse(localStorage.getItem('teatime_sessions') || '[]');
+        // 雲端版改用 listenData
     },
 
     renderSessions() {
         const container = document.getElementById('vendor-list');
-        const openSessions = this.sessions.filter(s => s.status === 'open');
+        // 顯示最新的活動在最上面
+        const openSessions = this.sessions.filter(s => s.status === 'open').reverse();
 
         if (openSessions.length === 0) {
             container.innerHTML = `
@@ -64,7 +85,8 @@ const memberApp = {
         const myName = localStorage.getItem('teatime_last_member_name');
         if (!myName) return;
 
-        const myHistory = this.orders.filter(o => o.member === myName).slice(0, 5);
+        // 篩選我的歷史，並顯示最新的 5 筆
+        const myHistory = this.orders.filter(o => o.member === myName).reverse().slice(0, 5);
         if (myHistory.length === 0) return;
 
         container.innerHTML = myHistory.map(o => `
@@ -124,18 +146,12 @@ const memberApp = {
         `).join('');
     },
 
-    removeFromCart(idx) {
-        this.cart.splice(idx, 1);
-        this.updateCartUI();
-    },
-
     placeOrder() {
         const name = document.getElementById('member-name').value.trim();
         if (!name) { alert('請輸入姓名'); return; }
         if (this.cart.length === 0) return;
 
         localStorage.setItem('teatime_last_member_name', name);
-        const storedOrders = JSON.parse(localStorage.getItem('teatime_orders') || '[]');
 
         const order = {
             id: `ORD-${Date.now()}`,
@@ -147,8 +163,10 @@ const memberApp = {
             total: this.cart.reduce((sum, item) => sum + (parseFloat(item.basePrice) || 0), 0)
         };
 
-        storedOrders.unshift(order);
-        localStorage.setItem('teatime_orders', JSON.stringify(storedOrders));
+        // 提交到 Firebase (改用 push 增加在最後面，保持自然順序)
+        const newOrders = [...this.orders, order];
+        db.ref('orders').set(newOrders);
+
         document.getElementById('modal-container').style.display = 'flex';
     }
 };

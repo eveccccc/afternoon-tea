@@ -13,33 +13,48 @@ const app = {
 
   // Initialization
   init() {
-    this.loadData();
-    this.renderVendors();
-    this.updateDashboard();
+    this.listenData();
     this.setupEventListeners();
-    console.log("Afternoon Tea System Initialized");
+    console.log("Afternoon Tea Cloud System Initialized");
+  },
+
+  listenData() {
+    // 監聽 店家 資料
+    db.ref('vendors').on('value', (snapshot) => {
+      const data = snapshot.val();
+      this.vendors = data ? Object.values(data) : this.getInitialVendors();
+      this.renderVendors();
+      this.updateDashboard();
+      if (document.getElementById('active-sessions-list')) this.renderActiveSessions();
+    });
+
+    // 監聽 訂單 資料
+    db.ref('orders').on('value', (snapshot) => {
+      const data = snapshot.val();
+      this.orders = data ? Object.values(data) : [];
+      this.updateDashboard();
+      if (document.getElementById('full-history-list')) this.renderHistory();
+    });
+
+    // 監聽 訂購活動 (Sessions)
+    db.ref('sessions').on('value', (snapshot) => {
+      const data = snapshot.val();
+      this.sessions = data ? Object.values(data) : [];
+      if (document.getElementById('active-sessions-list')) this.renderActiveSessions();
+      if (document.getElementById('full-history-list')) this.renderHistory();
+    });
   },
 
   loadData() {
-    this.vendors = JSON.parse(localStorage.getItem('teatime_vendors') || '[]');
-    if (this.vendors.length === 0) this.vendors = this.getInitialVendors();
-
-    this.orders = JSON.parse(localStorage.getItem('teatime_orders') || '[]');
-    this.sessions = JSON.parse(localStorage.getItem('teatime_sessions') || '[]');
-
-    // Ensure vendors have some menu if they are initial
-    this.updateDashboard();
+    // 雲端版改用 listenData，此函數保留結構但不再由 init 調用
   },
 
   saveData() {
-    localStorage.setItem('teatime_vendors', JSON.stringify(this.vendors));
-    localStorage.setItem('teatime_orders', JSON.stringify(this.orders));
-    localStorage.setItem('teatime_sessions', JSON.stringify(this.sessions));
-    this.updateDashboard();
-    // 確保刪除後相關介面立即同步更新
-    if (document.getElementById('vendors-list')) this.renderVendors();
-    if (document.getElementById('active-sessions-list')) this.renderActiveSessions();
-    if (document.getElementById('full-history-list')) this.renderHistory();
+    // 雲端版直接更換整個資料路徑內容 (Realtime Database 下)
+    // 注意：這裡使用 set 是覆寫模式，適合小型專案同步
+    db.ref('vendors').set(this.vendors);
+    db.ref('orders').set(this.orders);
+    db.ref('sessions').set(this.sessions);
   },
 
   getInitialVendors() {
@@ -673,16 +688,24 @@ const app = {
 
       return `
         <div class="vendor-card" style="border-left: 5px solid var(--accent-blue);">
-          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.8rem;">
             <div>
-              <h3 style="font-size: 1.1rem; color: white;">${s.date}</h3>
-              <p style="font-size: 0.85rem; color: var(--text-secondary);">店家: ${vendorNames}</p>
+              <h3 style="font-size: 1.2rem; color: white;">${s.date}</h3>
+              <p style="font-size: 0.9rem; color: var(--text-secondary);">開放店家: ${vendorNames}</p>
             </div>
             <div style="display: flex; gap: 8px;">
               <button class="btn btn-primary" style="padding: 0.3rem 0.6rem; background: #475569;" onclick="app.editActiveSession(${s.id})">修改日期</button>
               <button class="btn btn-danger" style="padding: 0.3rem 0.6rem;" onclick="app.deleteActiveSession(${s.id})">刪除</button>
             </div>
           </div>
+          
+          <div style="margin: 1rem 0;">
+            <button class="btn btn-primary" style="width: 100%; background: var(--accent-blue); padding: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 8px;" 
+              onclick="const url = window.location.href.replace('index.html', 'order.html'); navigator.clipboard.writeText(url); alert('🔗 前台連結已複製！\\n快傳到群組讓同事訂購吧！')">
+              <span>🔗 複製前台網址給同事</span>
+            </button>
+          </div>
+
           <button class="btn btn-success" style="width: 100%; margin-top: 5px;" onclick="app.closeSession(${s.id})">完成並結束訂購</button>
         </div>
       `;
@@ -917,7 +940,9 @@ const app = {
     // 近期單筆明細更新
     if (recentEl) {
       if (this.orders.length > 0) {
-        recentEl.innerHTML = this.orders.slice(0, 5).map(o => `
+        // 顯示最新的 5 筆
+        const displayOrders = [...this.orders].reverse().slice(0, 5);
+        recentEl.innerHTML = displayOrders.map(o => `
           <div class="history-item" onclick="app.showOrderDetails('${o.id}')" style="cursor: pointer; padding: 12px;">
             <div class="date">${o.date.split(' ')[1] || o.date}</div>
             <div class="vendor" style="flex: 1.5;"><strong>${o.member || '訪客'}</strong>：${o.vendorName}</div>
@@ -972,7 +997,9 @@ const app = {
       return;
     }
 
-    container.innerHTML = this.sessions.map(session => {
+    // 顯示最新的 Session 在最上面
+    const displaySessions = [...this.sessions].reverse();
+    container.innerHTML = displaySessions.map(session => {
       const sessionOrders = this.orders.filter(o => o.sessionId === session.id);
 
       // 計算活動總額

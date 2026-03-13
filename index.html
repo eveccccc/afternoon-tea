@@ -12,6 +12,10 @@
         href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="firebase-config.js"></script>
 </head>
 
 <body>
@@ -37,6 +41,10 @@
                 </button>
             </nav>
             <div class="sidebar-footer">
+                <button class="btn btn-primary" style="width: 100%; margin-bottom: 1rem; font-size: 0.8rem;"
+                    onclick="const url = window.location.href.replace('index.html', 'order.html'); navigator.clipboard.writeText(url); alert('前台網址已複製！快發給同事吧：' + url)">
+                    🔗 複製前台連結
+                </button>
                 <p>© 2026 Afternoon Tea Ops</p>
             </div>
         </aside>
